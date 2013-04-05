@@ -4,7 +4,7 @@ var MobileMap;
         var n = $(obj);
         var t = {
             callback: {
-                search: function (marker, lt, lg, circle, e) {},
+                search: function (marker, lt, lg, circle, size) {},
                 clearSearch: function () {},
                 home: function () {},
                 newMarker: function (marker, lt, lg) {},
@@ -65,17 +65,17 @@ var MobileMap;
             if (typeof lg != "number") {
                 lg = parseFloat(lg)
             };
-            var e = 1609.34;
+            var size = 1609.34;
             circle = $.extend(true, circle, {
                 center: new google.maps.LatLng(marker, lt),
                 map: t.map,
-                radius: lg * e,
+                radius: lg * size,
             });
-            var f = new google.maps.Circle(circle);
-            t.circles.push(f);
-            t.bounds.union(f.getBounds());
+            var searched = new google.maps.Circle(circle);
+            t.circles.push(searched);
+            t.bounds.union(searched.getBounds());
             t.resetBounds();
-            return f
+            return searched
         };
         t.hideCircles = function () {
             $.each(t.circles, function (i, marker) {
@@ -121,15 +121,15 @@ var MobileMap;
             t.geocode(g, function (lg) {
                 if (lg.success) {
                     var circle = lg.results[0].geometry.location.lat();
-                    var e = lg.results[0].geometry.location.lng();
-                    var f = t.addCircle(circle, e, h);
+                    var size = lg.results[0].geometry.location.lng();
+                    var searched = t.addCircle(circle, size, h);
                     t.db.query('markers', function (marker) {
-                        var lat = ((Math.acos(Math.sin(circle * Math.PI / 180) * Math.sin(marker.lat * Math.PI / 180) + Math.cos(circle * Math.PI / 180) * Math.cos(marker.lat * Math.PI / 180) * Math.cos((e - marker.lng) * Math.PI / 180)) * 180 / Math.PI) * 60 * 1.1515) * 1;
+                        var lat = ((Math.acos(Math.sin(circle * Math.PI / 180) * Math.sin(marker.lat * Math.PI / 180) + Math.cos(circle * Math.PI / 180) * Math.cos(marker.lat * Math.PI / 180) * Math.cos((size - marker.lng) * Math.PI / 180)) * 180 / Math.PI) * 60 * 1.1515) * 1;
                         if (!h || h > lt) {
                             k.push(marker)
                         }
                     });
-                    t.searchBounds = f.getBounds();
+                    t.searchBounds = searched.getBounds();
                     t.map.fitBounds(t.searchBounds);
                     t.hideMarkers();
                     $.each(k, function (i, marker) {
@@ -141,7 +141,7 @@ var MobileMap;
                             lt.setVisible(true)
                         }
                     });
-                    t.callback.search(k, circle, e, h, f);
+                    t.callback.search(k, circle, size, h, searched);
                     t.hasSearched = true
                 };
                 j(k, lg)
@@ -227,23 +227,23 @@ var MobileMap;
         t.updateMarker = function (marker, lt, lg) {
             marker.setPosition(new google.maps.LatLng(lt, lg))
         };
-        t.editMarker = function (f, g) {
-            t.geocode(f.address, function (lt) {
+        t.editMarker = function (searched, g) {
+            t.geocode(searched.address, function (lt) {
                 if (lt.success) {
                     var lg = lt.results[0].geometry.location.lat();
                     var circle = lt.results[0].geometry.location.lng();
-                    var e = t.hasLatLng(lg, circle);
+                    var size = t.hasLatLng(lg, circle);
                     t.updateMarker(t.markers[t.editIndex], lg, circle);
                     t.db.update("markers", {
                         ID: t.editIndex + 1
                     }, function () {
                         var marker = {
-                            name: f.name,
-                            address: f.address,
-                            street: f.street,
-                            city: f.city,
-                            state: f.state,
-                            zipcode: f.zipcode,
+                            name: searched.name,
+                            address: searched.address,
+                            street: searched.street,
+                            city: searched.city,
+                            state: searched.state,
+                            zipcode: searched.zipcode,
                             response: lt,
                             lat: lg,
                             lng: circle
@@ -252,10 +252,10 @@ var MobileMap;
                     });
                     t.db.commit();
                     if (typeof g == "function") {
-                        g(b, f)
+                        g(lat, searched)
                     }
                 } else {
-                    alert('\'' + $.trim(f.address) + '\' is an invalid location')
+                    alert('\'' + $.trim(searched.address) + '\' is an invalid location')
                 }
             })
         };
@@ -272,10 +272,10 @@ var MobileMap;
                     var lt = marker.results[0].geometry.location.lat();
                     var lg = marker.results[0].geometry.location.lng();
                     var circle = t.hasLatLng(lt, lg);
-                    var e = false;
-                    var f = false;
+                    var size = false;
+                    var searched = false;
                     if (h && circle == false) {
-                        f = t.db.insert("markers", {
+                        searched = t.db.insert("markers", {
                             name: g.name,
                             address: g.address,
                             street: g.street,
@@ -291,7 +291,7 @@ var MobileMap;
                     if (circle) {
                         alert('\'' + $.trim(g.address) + '\' is already a location on the map')
                     } else {
-                        t.newMarker(lt, lg, f);
+                        t.newMarker(lt, lg, searched);
                         if (typeof i == "function") {
                             i(marker, g, h)
                         }
@@ -310,9 +310,9 @@ var MobileMap;
             });
             return circle
         };
-        t.geocode = function (circle, e) {
-            if (typeof e != "function") {
-                e = function () {}
+        t.geocode = function (circle, size) {
+            if (typeof size != "function") {
+                size = function () {}
             };
             t.geocoder.geocode({
                 'address': circle
@@ -322,7 +322,7 @@ var MobileMap;
                     status: lt,
                     results: marker
                 };
-                e(lg)
+                size(lg)
             })
         };
         t.init();
