@@ -55,9 +55,9 @@ var MobileMap;
         t.addCircle = function (marker, lt, lg, circle) {
             if (!circle) {
                 var circle = {
-                    fillColor: 'blue',
+                    fillColor: 'gray',
                     fillOpacity: .2,
-                    strokeColor: 'blue',
+                    strokeColor: 'gray',
                     strokeOpacity: .4,
                     strokeWeight: 3
                 }
@@ -71,11 +71,11 @@ var MobileMap;
                 map: t.map,
                 radius: lg * size,
             });
-            var searched = new google.maps.Circle(circle);
-            t.circles.push(searched);
-            t.bounds.union(searched.getBounds());
+            var f = new google.maps.Circle(circle);
+            t.circles.push(f);
+            t.bounds.union(f.getBounds());
             t.resetBounds();
-            return searched
+            return f
         };
         t.hideCircles = function () {
             $.each(t.circles, function (i, marker) {
@@ -122,14 +122,14 @@ var MobileMap;
                 if (lg.success) {
                     var circle = lg.results[0].geometry.location.lat();
                     var size = lg.results[0].geometry.location.lng();
-                    var searched = t.addCircle(circle, size, h);
+                    var f = t.addCircle(circle, size, h);
                     t.db.query('markers', function (marker) {
-                        var lat = ((Math.acos(Math.sin(circle * Math.PI / 180) * Math.sin(marker.lat * Math.PI / 180) + Math.cos(circle * Math.PI / 180) * Math.cos(marker.lat * Math.PI / 180) * Math.cos((size - marker.lng) * Math.PI / 180)) * 180 / Math.PI) * 60 * 1.1515) * 1;
+                        var lt = ((Math.acos(Math.sin(circle * Math.PI / 180) * Math.sin(marker.lat * Math.PI / 180) + Math.cos(circle * Math.PI / 180) * Math.cos(marker.lat * Math.PI / 180) * Math.cos((size - marker.lng) * Math.PI / 180)) * 180 / Math.PI) * 60 * 1.1515) * 1;
                         if (!h || h > lt) {
                             k.push(marker)
                         }
                     });
-                    t.searchBounds = searched.getBounds();
+                    t.searchBounds = f.getBounds();
                     t.map.fitBounds(t.searchBounds);
                     t.hideMarkers();
                     $.each(k, function (i, marker) {
@@ -141,7 +141,7 @@ var MobileMap;
                             lt.setVisible(true)
                         }
                     });
-                    t.callback.search(k, circle, size, h, searched);
+                    t.callback.search(k, circle, size, h, f);
                     t.hasSearched = true
                 };
                 j(k, lg)
@@ -227,7 +227,7 @@ var MobileMap;
         t.updateMarker = function (marker, lt, lg) {
             marker.setPosition(new google.maps.LatLng(lt, lg))
         };
-        t.editMarker = function (searched, g) {
+        t.editMarker = function (f, g) {
             t.geocode(searched.address, function (lt) {
                 if (lt.success) {
                     var lg = lt.results[0].geometry.location.lat();
@@ -252,7 +252,7 @@ var MobileMap;
                     });
                     t.db.commit();
                     if (typeof g == "function") {
-                        g(lat, searched)
+                        g(lt, searched)
                     }
                 } else {
                     alert('\'' + $.trim(searched.address) + '\' is an invalid location')
