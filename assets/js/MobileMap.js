@@ -1,13 +1,13 @@
 var MobileMap;
 (function ($) {
-    MobileMap = function (l, m) {
-        var n = $(l);
+    MobileMap = function (obj, options) {
+        var n = $(obj);
         var t = {
             callback: {
-                search: function (a, b, c, d, e) {},
+                search: function (marker, lt, lg, circle, e) {},
                 clearSearch: function () {},
                 home: function () {},
-                newMarker: function (a, b, c) {},
+                newMarker: function (marker, lt, lg) {},
             },
             db: new localStorageDB("MapIndex", localStorage),
             bounds: new google.maps.LatLngBounds(),
@@ -28,21 +28,21 @@ var MobileMap;
                 map: n
             }
         };
-        if (!m) {
-            var m = {}
+        if (!options) {
+            var options = {}
         };
-        t = $.extend(true, t, m);
-        t.init = function (b) {
-            if (b) {
-                t.mapOptions = $.extend(true, t.mapOptions, b)
+        t = $.extend(true, t, options);
+        t.init = function (lt) {
+            if (lt) {
+                t.mapOptions = $.extend(true, t.mapOptions, lt)
             };
             t.map = new google.maps.Map(t.ui.map.get(0), t.mapOptions);
             if (!t.db.tableExists('markers')) {
                 t.db.createTable("markers", ["name", "address", "response", "street", "city", "state", "zipcode", "lat", "lng"]);
                 t.db.commit()
             };
-            t.db.query('markers', function (a) {
-                t.newMarker(a.lat, a.lng, a.ID)
+            t.db.query('markers', function (marker) {
+                t.newMarker(marker.lat, marker.lng, marker.ID)
             });
             return t.map
         };
@@ -52,9 +52,9 @@ var MobileMap;
             t.map.fitBounds(t.bounds);
             t.callback.home()
         };
-        t.addCircle = function (a, b, c, d) {
-            if (!d) {
-                var d = {
+        t.addCircle = function (marker, lt, lg, circle) {
+            if (!circle) {
+                var circle = {
                     fillColor: 'blue',
                     fillOpacity: .2,
                     strokeColor: 'blue',
@@ -62,34 +62,34 @@ var MobileMap;
                     strokeWeight: 3
                 }
             };
-            if (typeof c != "number") {
-                c = parseFloat(c)
+            if (typeof lg != "number") {
+                lg = parseFloat(lg)
             };
             var e = 1609.34;
-            d = $.extend(true, d, {
-                center: new google.maps.LatLng(a, b),
+            circle = $.extend(true, circle, {
+                center: new google.maps.LatLng(marker, lt),
                 map: t.map,
-                radius: c * e,
+                radius: lg * e,
             });
-            var f = new google.maps.Circle(d);
+            var f = new google.maps.Circle(circle);
             t.circles.push(f);
             t.bounds.union(f.getBounds());
             t.resetBounds();
             return f
         };
         t.hideCircles = function () {
-            $.each(t.circles, function (i, a) {
+            $.each(t.circles, function (i, marker) {
                 t.circles[i].setVisible(false)
             })
         };
         t.showCircles = function () {
-            $.each(t.circles, function (i, a) {
+            $.each(t.circles, function (i, marker) {
                 t.circles[i].setVisible(true)
             })
         };
-        t.showCircle = function (a) {
-            if (t.circles[a]) {
-                t.circles[a].setVisible(false)
+        t.showCircle = function (marker) {
+            if (t.circles[marker]) {
+                t.circles[marker].setVisible(false)
             }
         };
         t.clearSearch = function () {
@@ -99,14 +99,14 @@ var MobileMap;
             t.resetBounds();
             t.callback.clearSearch()
         };
-        t.getMarkerById = function (b) {
-            var c;
-            $.each(t.markers, function (i, a) {
-                if (a.id == b) {
-                    c = a
+        t.getMarkerById = function (lt) {
+            var lg;
+            $.each(t.markers, function (i, marker) {
+                if (marker.id == lt) {
+                    lg = marker
                 }
             });
-            return c
+            return lg
         };
         t.search = function (g, h, j) {
             if (typeof j != "function") {
@@ -118,137 +118,137 @@ var MobileMap;
             };
             var k = [];
             t.hideCircles();
-            t.geocode(g, function (c) {
-                if (c.success) {
-                    var d = c.results[0].geometry.location.lat();
-                    var e = c.results[0].geometry.location.lng();
-                    var f = t.addCircle(d, e, h);
-                    t.db.query('markers', function (a) {
-                        var b = ((Math.acos(Math.sin(d * Math.PI / 180) * Math.sin(a.lat * Math.PI / 180) + Math.cos(d * Math.PI / 180) * Math.cos(a.lat * Math.PI / 180) * Math.cos((e - a.lng) * Math.PI / 180)) * 180 / Math.PI) * 60 * 1.1515) * 1;
-                        if (!h || h > b) {
-                            k.push(a)
+            t.geocode(g, function (lg) {
+                if (lg.success) {
+                    var circle = lg.results[0].geometry.location.lat();
+                    var e = lg.results[0].geometry.location.lng();
+                    var f = t.addCircle(circle, e, h);
+                    t.db.query('markers', function (marker) {
+                        var lat = ((Math.acos(Math.sin(circle * Math.PI / 180) * Math.sin(marker.lat * Math.PI / 180) + Math.cos(circle * Math.PI / 180) * Math.cos(marker.lat * Math.PI / 180) * Math.cos((e - marker.lng) * Math.PI / 180)) * 180 / Math.PI) * 60 * 1.1515) * 1;
+                        if (!h || h > lt) {
+                            k.push(marker)
                         }
                     });
                     t.searchBounds = f.getBounds();
                     t.map.fitBounds(t.searchBounds);
                     t.hideMarkers();
-                    $.each(k, function (i, a) {
-                        var b = t.getMarkerById(a.ID);
-                        if (!b) {
-                            console.log(b)
+                    $.each(k, function (i, marker) {
+                        var lt = t.getMarkerById(marker.ID);
+                        if (!lt) {
+                            console.log(lt)
                         };
-                        if (b) {
-                            b.setVisible(true)
+                        if (lt) {
+                            lt.setVisible(true)
                         }
                     });
-                    t.callback.search(k, d, e, h, f);
+                    t.callback.search(k, circle, e, h, f);
                     t.hasSearched = true
                 };
-                j(k, c)
+                j(k, lg)
             });
             return k
         };
-        t.setBounds = function (a) {
-            t.map.fitBounds(a);
-            t.bounds = a
+        t.setBounds = function (marker) {
+            t.map.fitBounds(marker);
+            t.bounds = marker
         };
         t.hideMarkers = function () {
-            $.each(t.markers, function (i, a) {
-                if (a) {
-                    a.setVisible(false)
+            $.each(t.markers, function (i, marker) {
+                if (marker) {
+                    marker.setVisible(false)
                 }
             })
         };
         t.showMarkers = function () {
-            $.each(t.markers, function (i, a) {
-                if (a) {
-                    a.setVisible(true)
+            $.each(t.markers, function (i, marker) {
+                if (marker) {
+                    marker.setVisible(true)
                 }
             })
         };
-        t.resetBounds = function (b) {
-            var c = new google.maps.LatLngBounds();
+        t.resetBounds = function (lt) {
+            var lg = new google.maps.LatLngBounds();
             google.maps.event.trigger(t.map, 'resize');
-            $.each(t.markers, function (i, a) {
-                if (a && a.getVisible()) {
-                    c.extend(a.getPosition())
+            $.each(t.markers, function (i, marker) {
+                if (marker && marker.getVisible()) {
+                    lg.extend(marker.getPosition())
                 }
             });
-            if (b) {
-                $.each(t.circles, function (i, a) {
-                    if (a.getVisible()) {
-                        c.union(a.getBounds())
+            if (lt) {
+                $.each(t.circles, function (i, marker) {
+                    if (marker.getVisible()) {
+                        lg.union(marker.getBounds())
                     }
                 })
             };
             if (!t.hasSearched) {
-                t.bounds = c;
+                t.bounds = lg;
                 t.map.fitBounds(t.bounds)
             } else {
                 t.map.fitBounds(t.searchBounds)
             };
-            return c
+            return lg
         };
-        t.newMarker = function (a, b, c) {
-            var d = new google.maps.LatLng(a, b);
-            if (!c) {
-                var c = false
+        t.newMarker = function (marker, lt, lg) {
+            var circle = new google.maps.LatLng(marker, lt);
+            if (!lg) {
+                var lg = false
             };
             marker = new google.maps.Marker({
                 map: t.map,
-                position: d,
-                id: c
+                position: circle,
+                id: lg
             });
-            t.callback.newMarker(marker, a, b, t.markers.length);
+            t.callback.newMarker(marker, marker, lt, t.markers.length);
             t.markers.push(marker);
-            t.bounds.extend(d);
+            t.bounds.extend(circle);
             t.resetBounds();
             return marker
         };
-        t.deleteMarker = function (b) {
-            var c = t.markers[b];
-            if (!c) {
-                var d = false
+        t.deleteMarker = function (lt) {
+            var lg = t.markers[lt];
+            if (!lg) {
+                var circle = false
             } else {
-                var d = c.id;
-                c.setVisible(false)
-            }; if (d) {
-                t.db.deleteRows('markers', function (a) {
-                    if (a.ID == d) {
+                var circle = lg.id;
+                lg.setVisible(false)
+            }; if (circle) {
+                t.db.deleteRows('markers', function (marker) {
+                    if (marker.ID == circle) {
                         return true
                     }
                 });
                 t.db.commit()
             };
-            t.markers[b] = false;
+            t.markers[lt] = false;
             t.resetBounds();
             t.home()
         };
-        t.updateMarker = function (a, b, c) {
-            a.setPosition(new google.maps.LatLng(b, c))
+        t.updateMarker = function (marker, lt, lg) {
+            marker.setPosition(new google.maps.LatLng(lt, lg))
         };
         t.editMarker = function (f, g) {
-            t.geocode(f.address, function (b) {
-                if (b.success) {
-                    var c = b.results[0].geometry.location.lat();
-                    var d = b.results[0].geometry.location.lng();
-                    var e = t.hasLatLng(c, d);
-                    t.updateMarker(t.markers[t.editIndex], c, d);
+            t.geocode(f.address, function (lt) {
+                if (lt.success) {
+                    var lg = lt.results[0].geometry.location.lat();
+                    var circle = lt.results[0].geometry.location.lng();
+                    var e = t.hasLatLng(lg, circle);
+                    t.updateMarker(t.markers[t.editIndex], lg, circle);
                     t.db.update("markers", {
                         ID: t.editIndex + 1
                     }, function () {
-                        var a = {
+                        var marker = {
                             name: f.name,
                             address: f.address,
                             street: f.street,
                             city: f.city,
                             state: f.state,
                             zipcode: f.zipcode,
-                            response: b,
-                            lat: c,
-                            lng: d
+                            response: lt,
+                            lat: lg,
+                            lng: circle
                         };
-                        return a
+                        return marker
                     });
                     t.db.commit();
                     if (typeof g == "function") {
@@ -267,14 +267,14 @@ var MobileMap;
                 i = h;
                 h = true
             };
-            t.geocode(g.address, function (a) {
-                if (a.success) {
-                    var b = a.results[0].geometry.location.lat();
-                    var c = a.results[0].geometry.location.lng();
-                    var d = t.hasLatLng(b, c);
+            t.geocode(g.address, function (marker) {
+                if (marker.success) {
+                    var lt = marker.results[0].geometry.location.lat();
+                    var lg = marker.results[0].geometry.location.lng();
+                    var circle = t.hasLatLng(lt, lg);
                     var e = false;
                     var f = false;
-                    if (h && d == false) {
+                    if (h && circle == false) {
                         f = t.db.insert("markers", {
                             name: g.name,
                             address: g.address,
@@ -282,18 +282,18 @@ var MobileMap;
                             city: g.city,
                             state: g.state,
                             zipcode: g.zipcode,
-                            response: a,
-                            lat: b,
-                            lng: c
+                            response: marker,
+                            lat: lt,
+                            lng: lg
                         });
                         t.db.commit()
                     };
-                    if (d) {
+                    if (circle) {
                         alert('\'' + $.trim(g.address) + '\' is already a location on the map')
                     } else {
-                        t.newMarker(b, c, f);
+                        t.newMarker(lt, lg, f);
                         if (typeof i == "function") {
-                            i(a, g, h)
+                            i(marker, g, h)
                         }
                     }
                 } else {
@@ -301,34 +301,34 @@ var MobileMap;
                 }
             })
         };
-        t.hasLatLng = function (b, c) {
-            var d = false;
-            t.db.query('markers', function (a) {
-                if (a.lat == b && a.lng == c) {
-                    d = true
+        t.hasLatLng = function (lt, lg) {
+            var circle = false;
+            t.db.query('markers', function (marker) {
+                if (marker.lat == lt && marker.lng == lg) {
+                    circle = true
                 }
             });
-            return d
+            return circle
         };
-        t.geocode = function (d, e) {
+        t.geocode = function (circle, e) {
             if (typeof e != "function") {
                 e = function () {}
             };
             t.geocoder.geocode({
-                'address': d
-            }, function (a, b) {
-                var c = {
-                    success: b == google.maps.GeocoderStatus.OK ? true : false,
-                    status: b,
-                    results: a
+                'address': circle
+            }, function (marker, lt) {
+                var lg = {
+                    success: lt == google.maps.GeocoderStatus.OK ? true : false,
+                    status: lt,
+                    results: marker
                 };
-                e(c)
+                e(lg)
             })
         };
         t.init();
         return t
     };
-    $.fn.MobileMap = function (a) {
-        return new MobileMap($(this), a)
+    $.fn.MobileMap = function (marker) {
+        return new MobileMap($(this), marker)
     }
 })(jQuery);
